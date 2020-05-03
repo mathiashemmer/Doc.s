@@ -47,6 +47,7 @@ namespace DocsBlazor.Pages.Documents
                 this.Block();
                 DocumentList = (await documentService.GetDocumentList()).ToList();
                 CategoryList = (await categoryService.GetCategoryList()).ToList();
+                this.SortList();
                 this.Unblock();
             }
             catch (Exception ex)
@@ -151,6 +152,7 @@ namespace DocsBlazor.Pages.Documents
                 }
 
                 this.CurrentOperation = FormOperation.Nenhum;
+                this.SortList();
                 this.ResetEntries();
                 this.Unblock();
                 return returnType;
@@ -175,6 +177,7 @@ namespace DocsBlazor.Pages.Documents
                 {
                     this.ShowToast("Documento deletado com sucesso!");
                     if(!this.DocumentList.Remove(CurrentDocument)) await this.GetList();
+                    this.SortList();
                     this.CurrentDocument = null;
                     this.CurrentOperation = FormOperation.Nenhum;
                     this.Unblock();
@@ -229,6 +232,12 @@ namespace DocsBlazor.Pages.Documents
             this.CurrentDocument = null;
             this.IsUploading = false;
             this.UploadProgress = 0;
+        }
+        private void SortList()
+        {
+            if (this.DocumentList == null || this.DocumentList.Count() == 0) return;
+
+            this.DocumentList.Sort((first, second) => string.Compare(first.TITLE, second.TITLE));
         }
         // File Handle Input
         protected void OnFileInputStart()
