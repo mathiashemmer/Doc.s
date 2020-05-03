@@ -1,0 +1,202 @@
+﻿@page "/document"
+@inherits DocumentBase
+
+@using DocsBlazor.Const
+@using Docs.Models
+@using System.IO;
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<div class="m-3 mr-3" style="@GetBlocked()">
+    <div>
+        <Row>
+            <Column ColumnSize="ColumnSize.Is6">
+                <h2 style="font-weight:bold">Documentos</h2>
+            </Column>
+            <Column ColumnSize="ColumnSize.Is6" Class="d-flex">
+                <Button Color="Color.Dark" Clicked="@(() => OnNew())" class="ml-auto">Novo</Button>
+            </Column>
+        </Row>
+        <Row>
+            <Column ColumnSize="ColumnSize.Is6">
+                @if (CurrentOperation != FormOperation.Nenhum)
+                {
+                    <Badge Color="Color.Dark">@Enum.GetName(typeof(FormOperation), CurrentOperation)</Badge>
+                }
+                else
+                {
+                    <Badge Color="Color.Dark">Registros</Badge>
+                }
+
+            </Column>
+            <Column ColumnSize="ColumnSize.Is6"></Column>
+        </Row>
+        <div style="height:55vh; overflow-y:scroll">
+            <Table Hoverable="true" Striped="true" Narrow="true" Borderless="true">
+                <TableHeader ThemeContrast="ThemeContrast.Dark">
+                    <TableRow>
+                        <TableHeaderCell>Ações</TableHeaderCell>
+                        <TableHeaderCell>Código</TableHeaderCell>
+                        <TableHeaderCell>Titulo</TableHeaderCell>
+                        <TableHeaderCell>Categoria</TableHeaderCell>
+                        <TableHeaderCell>Processo</TableHeaderCell>
+                        <TableHeaderCell>Extensão</TableHeaderCell>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    @if (DocumentList != null)
+                    {
+                        foreach (DocumentModel document in DocumentList)
+                        {
+                            <TableRow>
+                                <TableRowCell Style="width:120px">
+                                    <Button Class="btn-sm" Clicked="@(() => OnEdit(document))">
+                                        <Icon Name="@("fa-wrench")"></Icon>
+                                    </Button>
+                                    <Button Class="btn-sm" Clicked="@(() => OnView(document))">
+                                        <Icon Name="@("fa-search")"></Icon>
+                                    </Button>
+                                    <Button Class="btn-sm" Clicked="(() => OnDownload(document))">
+                                        <Icon Name="@("fa-file-download")"></Icon>
+                                    </Button>
+                                </TableRowCell>
+                                <TableRowCell>@document.CODE</TableRowCell>
+                                <TableRowCell>@document.TITLE</TableRowCell>
+                                <TableRowCell>@MapCategoryIDToName(document.CATEGORY_ID)</TableRowCell>
+                                <TableRowCell>@document.PROCESS</TableRowCell>
+                                <TableRowCell>
+                                    <Badge Color="Color.Dark">
+                                        @Enum.GetName(typeof(FileType), document.FILE_TYPE)
+                                    </Badge>
+                                </TableRowCell>
+                            </TableRow>
+                        }
+                    }
+                </TableBody>
+            </Table>
+        </div>
+    </div>
+    <div class="mt-3">
+        @if ((((int)CurrentOperation) & ((int)FormOperation.Editando + (int)FormOperation.Visualizando + (int)FormOperation.Adicionando)) != 0)
+        {
+            if (CurrentDocument != null)
+            {
+                <Card WhiteText="true" Background="Background.Dark">
+                    <CardHeader>
+                        Documento: @CurrentDocument.TITLE
+                    </CardHeader>
+                    <CardBody>
+                        <Validations @ref="DocumentValidator" Mode="ValidationMode.Auto" Model="@CurrentDocument">
+                            <Row>
+                                <Column ColumnSize="ColumnSize.Is3">
+                                    <Validation>
+                                        <Field>
+                                            <FieldLabel>Código do Arquivo</FieldLabel>
+
+                                            <NumericEdit TValue="int"
+                                                         Disabled="@(CurrentOperation == FormOperation.Visualizando || CurrentOperation == FormOperation.Editando)"
+                                                         @bind-Value="@CurrentDocument.CODE" />
+                                            <ValidationError />
+                                        </Field>
+                                    </Validation>
+                                </Column>
+                                <Column ColumnSize="ColumnSize.Is9">
+                                    <Validation>
+                                        <Field>
+                                            <FieldLabel>Título do Arquivo</FieldLabel>
+                                            <TextEdit Placeholder="Título"
+                                                      Disabled="@(CurrentOperation == FormOperation.Visualizando)"
+                                                      @bind-Text="@CurrentDocument.TITLE" />
+                                            <ValidationError />
+                                        </Field>
+                                    </Validation>
+                                </Column>
+                            </Row>
+                            <Row>
+                                <Column ColumnSize="ColumnSize.Is3">
+                                    <Validation>
+                                        <Field>
+                                            <FieldLabel>Categoria</FieldLabel>
+                                            <Select @bind-SelectedValue="@CurrentDocument.CATEGORY_ID">
+                                                @if (CategoryList != null && CategoryList.Count() > 0)
+                                                        {
+                                                    @foreach (CategoryModel category in CategoryList)
+                                                            {
+                                                        <SelectItem Value="category.ID">
+                                                            @category.NAME
+                                                        </SelectItem>
+                                                            }
+                                                    /**/
+                                                        }
+                                                /**/
+                                            </Select>
+                                        </Field>
+                                    </Validation>
+                                </Column>
+                                <Column ColumnSize="ColumnSize.Is3">
+                                    <Validation>
+                                        <Field>
+                                            <FieldLabel>Processo</FieldLabel>
+                                            <TextEdit Placeholder="Processo"
+                                                      Disabled="@(CurrentOperation == FormOperation.Visualizando)"
+                                                      @bind-Text="@CurrentDocument.PROCESS" />
+                                            <ValidationError />
+                                        </Field>
+                                    </Validation>
+                                </Column>
+                                <Column ColumnSize="ColumnSize.Is6">
+                                    <Validation>
+                                        <Field>
+                                            <FieldLabel>Arquivo</FieldLabel>
+                                            <FileEdit Disabled="CurrentOperation == FormOperation.Visualizando || CurrentOperation == FormOperation.Editando"
+                                                      Changed="@OnFileInputChanged" Written="@OnFileInputWritten"
+                                                      Progressed="@OnFileInputProgess" Started="@OnFileInputStart"
+                                                      Ended="@OnFileInputEnd" Filter=".pdf, .doc, .docx, .xls, .xlsx">
+                                                <ChildContent>@CurrentDocument.FILE_NAME</ChildContent>
+                                            </FileEdit>
+                                        </Field>
+                                    </Validation>
+                                </Column>
+                            </Row>
+                        </Validations>
+                    </CardBody>
+                    <CardFooter>
+                        <Row>
+                            <Column ColumnSize="ColumnSize.Is9">
+                                @if (true)
+                                {
+                                    <div class="progress">
+                                        <div class="progress-bar" style="width: @UploadProgress%"></div>
+                                    </div>
+                                }
+                            </Column>
+                            <Column ColumnSize="ColumnSize.Is3" Style="display: flex">
+                                <Button Disabled="@(CurrentOperation == FormOperation.Visualizando || CurrentOperation == FormOperation.Adicionando)"
+                                        Clicked="@(() => OnDelete(CurrentDocument))" Color="Color.Dark" Style="margin-left:auto">
+                                    Deletar
+                                </Button>
+                                <Button Clicked="@(() => OnCancel())" Color="Color.Dark">Cancelar</Button>
+                                <Button Clicked="@OnSave" Disabled="@(CurrentOperation == FormOperation.Visualizando)"
+                                        Color="Color.Dark">
+                                    Gravar
+                                </Button>
+                            </Column>
+                        </Row>
+                    </CardFooter>
+                </Card>
+            }
+        }
+    </div>
+    <Snackbar @ref="@Toast" Interval="@ToastDismissTime">
+        <SnackbarBody>
+            @ToastMessage
+        </SnackbarBody>
+    </Snackbar>
+    @if (this.Blocked)
+    {
+        <div class="blocked">
+            <div class="spinner">
+
+            </div>
+        </div>
+    }
+</div>

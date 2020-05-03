@@ -1,0 +1,19 @@
+﻿@inherits MainLayoutBase
+@using Shared
+
+
+<Layout Sider="true">
+    <LayoutSider>
+        <LayoutSiderContent>
+            <NavMenu />
+        </LayoutSiderContent>
+    </LayoutSider>
+    <Layout>
+        <LayoutHeader class="d-flex bg-dark" Fixed="true">
+            <Button Color="Color.Dark" class="ml-auto"><Icon Name="@("fa-bars")" /> </Button>
+        </LayoutHeader>
+        <LayoutContent Class="bg-secondary">
+                @Body
+        </LayoutContent>
+    </Layout>
+</Layout>
