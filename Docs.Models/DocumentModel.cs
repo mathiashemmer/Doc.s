@@ -30,6 +30,9 @@ namespace Docs.Models
         [Required(ErrorMessage = "O Título é obrigatório!")]
         [StringLength(30, ErrorMessage = "O Título deve possuir entre 3 e 30 caracteres!", MinimumLength = 3)]
         public string TITLE { get; set; }
+
+        [Required(ErrorMessage = "O Processo é obrigatório!")]
+        [StringLength(30, ErrorMessage = "O Processo deve possuir entre 3 e 30 caracteres!", MinimumLength = 3)]
         public string PROCESS { get; set; }
 
         [Required]
